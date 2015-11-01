@@ -25,6 +25,10 @@ namespace BlobCleaner
           HelpText = "Blob Storage container name.")]
         public string ContainerName { get; set; }
 
+        [Option('n', "dryrun", DefaultValue = false,
+          HelpText = "Dry run - don't actually delete blobs.")]
+        public bool DryRun { get; set; }
+
         [Option('v', "verbose", DefaultValue = false,
           HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
@@ -62,12 +66,12 @@ namespace BlobCleaner
                     Console.WriteLine("Storage Account: {0}", options.AccountName);
                     Console.WriteLine("Container: {0}", options.ContainerName);
                 }
-                BlobCleaner(String.Format("DefaultEndpointsProtocol=http;AccountName={0};AccountKey={1}", options.AccountName, options.AccountKey), options.ContainerName, true);
+                BlobCleaner(String.Format("DefaultEndpointsProtocol=http;AccountName={0};AccountKey={1}", options.AccountName, options.AccountKey), options.ContainerName, true, options.DryRun);
                 Console.WriteLine("Done.");
             }
         }
 
-        public static void BlobCleaner(string connectionString, string containerName, bool showProgress = false)
+        public static void BlobCleaner(string connectionString, string containerName, bool showProgress = false, bool dryRun = false)
         {
             var client = Extensions.NewCloudBlobClient(connectionString);
             var container = Extensions.GetContainerReferenceWithValidation(client, containerName, true);
@@ -91,7 +95,8 @@ namespace BlobCleaner
                 {
                     if (showProgress)
                         Console.WriteLine("\rDeleting: {0}", blob.GetName());
-                    blob.Delete();
+                    if (!dryRun)
+                        blob.Delete();
                 }
                 else
                     hash.Add(md5);
